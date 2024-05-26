@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>상자 만들기</title>
+  <style>
+    .container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+
+    .box {
+      width: auto;
+      height: auto;
+      border: 2px solid black;
+      text-align: center;
+      margin: 10px;
+      padding: 10px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    button {
+      margin: 5px;
+      padding: 5px 10px;
+      font-size: 16px;
+    }
+
+    .player-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+    }
+
+    .player-buttons button {
+      margin: 5px;
+      width: 50px;
+      height: 50px;
+      font-size: 14px;
+    }
+
+    .storage {
+      margin-top: 10px;
+      border-top: 2px solid black;
+      padding-top: 10px;
+    }
+
+    .yellow-buttons button:nth-of-type(-n+5) {
+      background-color: lightgreen;
+    }
+
+    .yellow-buttons button:nth-of-type(n+11):nth-of-type(-n+15) {
+      background-color: lightgreen;
+    }
+
+    .player-buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 5px;
+      /* 줄 간의 간격 조절 */
+    }
+
+    .player-buttons button {
+      margin: 5px;
+      width: 50px;
+      height: 50px;
+      font-size: 14px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      /* 세로로 배치 */
+      align-items: center;
+      /* 가운데 정렬 */
+    }
+  </style>
+</head>
+
+<body>
+
+    <div class="container">
+      <div class="box" id="judge-box">
+        <div class="buttons">
+          <button onclick="draw()">뽑기</button>
+          <button onclick="reset()">리셋</button>
+        </div>
+      </div>
+      <div class="box" id="player1-box">
+        <div class="player-buttons yellow-buttons">
+          <div class="button-row">
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+  
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+          </div>
+  
+          <div class="button-row">
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+  
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+            <button onclick="updateButton(this, 'player1')"></button>
+          </div>
+        </div>
+        <div class="storage">
+          <h4>숫자보관창고</h4>
+          <div id="storage-box-player1"></div>
+        </div>
+      </div>
+  
+  
+    </div>
+
+  <script>
+    const socket = new WebSocket('ws://localhost:3000');
+
+    socket.addEventListener('open', function (event) {
+      console.log('웹 소켓 연결됨');
+    });
+
+    socket.addEventListener('message', function (event) {
+      const message = JSON.parse(event.data);
+      handleSocketMessage(message);
+    });
+
+    function handleSocketMessage(message) {
+      if (message.type === 'draw') {
+        draw();
+      } else if (message.type === 'reset') {
+        reset();
+      }
+    }
+
+    function sendSocketMessage(message) {
+      socket.send(JSON.stringify(message));
+    }
+
+    let numbers = [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15,
+      16, 16, 17, 17, 18, 18, 19, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30
+    ];
+    const initialNumbers = [...numbers];
+
+    function draw() {
+      if (numbers.length === 0) {
+        numbers = [...initialNumbers];
+        reset();
+        alert('숫자가 모두 소모되어 리셋됩니다.');
+      }
+      const randomIndex = Math.floor(Math.random() * numbers.length);
+      const drawnNumber = numbers.splice(randomIndex, 1)[0];
+      const players = ['player1', 'player2', 'player3', 'player4'];
+      players.forEach(player => {
+        const storageBox = document.getElementById(`storage-box-${player}`);
+        const newNumber = document.createElement('div');
+        newNumber.textContent = drawnNumber;
+        storageBox.appendChild(newNumber);
+      });
+      sendSocketMessage({ type: 'draw' }); // 뽑기 이벤트를 서버로 전송
+      console.log('뽑은 숫자:', drawnNumber);
+    }
+
+    function reset() {
+      const players = ['player1', 'player2', 'player3', 'player4'];
+      players.forEach(player => {
+        const storageBox = document.getElementById(`storage-box-${player}`);
+        storageBox.innerHTML = '';
+        const buttons = document.querySelectorAll(`#${player}-box .player-buttons button`);
+        buttons.forEach(button => {
+          button.textContent = ' ';
+        });
+        const playerBox = document.getElementById(`${player}-box`);
+        playerBox.style.backgroundColor = '';
+      });
+      sendSocketMessage({ type: 'reset' }); // 리셋 이벤트를 서버로 전송
+      console.log('숫자보관창고와 버튼들이 초기화되었습니다.');
+    }
+
+    // 생략된 함수들
+    function selectPlayer(playerNumber) {
+      const players = ['player1', 'player2', 'player3', 'player4'];
+      players.forEach((player, index) => {
+        const playerBox = document.getElementById(`${player}-box`);
+        if (playerNumber === index + 1) {
+          playerBox.style.backgroundColor = 'yellow';
+        } else {
+          playerBox.style.backgroundColor = '';
+        }
+      });
+      console.log(playerNumber + ' 버튼이 클릭되었습니다.');
+    }
+
+    function updateButton(button, player) {
+      const storageBox = document.getElementById(`storage-box-${player}`);
+      const lastNumber = storageBox.lastElementChild;
+      if (lastNumber) {
+        button.textContent = lastNumber.textContent;
+        lastNumber.remove();
+      }
+      const playerBox = document.getElementById(`${player}-box`);
+      playerBox.style.backgroundColor = 'white';
+      console.log('버튼이 업데이트되었습니다.');
+    }
+
+    function storeNumber() {
+      const players = ['player1', 'player2', 'player3', 'player4'];
+      players.forEach(player => {
+        const storageBox = document.getElementById(`storage-box-${player}`);
+        const newNumber = document.createElement('div');
+        newNumber.textContent = '숫자';
+        storageBox.appendChild(newNumber);
+      });
+      console.log('숫자가 보관되었습니다.');
+    }
+  </script>
+
+</body>
+
+</html>
